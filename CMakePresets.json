@@ -1,0 +1,47 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 21,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "kindle",
+      "hidden": true,
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "toolchainFile": "${sourceDir}/cmake/Kindle.cmake",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "MinSizeRel"
+      }
+    },
+    {
+      "name": "kindle4",
+      "inherits": "kindle",
+      "cacheVariables": { "OXIDE_ARCH": "kindle4" }
+    },
+    {
+      "name": "kindle5",
+      "inherits": "kindle",
+      "cacheVariables": { "OXIDE_ARCH": "kindle5" }
+    },
+    {
+      "name": "kindlepw2",
+      "inherits": "kindle",
+      "cacheVariables": { "OXIDE_ARCH": "kindlepw2" }
+    },
+    {
+      "name": "kindlehf",
+      "inherits": "kindle",
+      "cacheVariables": { "OXIDE_ARCH": "kindlehf" }
+    }
+  ],
+  "buildPresets": [
+    { "name": "kindle", "hidden": true, "jobs": 4 },
+    { "name": "kindle4", "inherits": "kindle", "configurePreset": "kindle4" },
+    { "name": "kindle5", "inherits": "kindle", "configurePreset": "kindle5" },
+    { "name": "kindlepw2", "inherits": "kindle", "configurePreset": "kindlepw2" },
+    { "name": "kindlehf", "inherits": "kindle", "configurePreset": "kindlehf" }
+  ]
+}

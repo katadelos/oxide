@@ -1,0 +1,26 @@
+#!/bin/sh
+set -eu
+root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+cd "$root"
+if [ "$(uname -s)" = Darwin ]; then
+    : "${OXIDE_TOOLCHAINS:?Set OXIDE_TOOLCHAINS to the koxtoolchain x-tools directory}"
+    set -- "${OXIDE_BUILD_IMAGE:-kindle-sdk-build:ubuntu24.04-amd64}" ./scripts/build "$@"
+    if [ -n "${ECJ_JAR:-}" ]; then
+        set -- --mount "type=bind,source=$ECJ_JAR,target=/inputs/ecj.jar,readonly" \
+            --env ECJ_JAR=/inputs/ecj.jar "$@"
+    fi
+    if [ -n "${K4_FRAMEWORK_API:-}" ]; then
+        set -- --mount "type=bind,source=$K4_FRAMEWORK_API,target=/inputs/framework-api.jar,readonly" \
+            --env K4_FRAMEWORK_API=/inputs/framework-api.jar "$@"
+    fi
+    exec docker run --rm --pull never --network none --platform linux/amd64 \
+        --mount "type=bind,source=$root,target=/src" \
+        --mount "type=bind,source=$OXIDE_TOOLCHAINS,target=/toolchains,readonly" \
+        --env OXIDE_TOOLCHAINS=/toolchains --workdir /src \
+        --env PKG_CONFIG_LIBDIR --env PKG_CONFIG_SYSROOT_DIR \
+        "$@"
+fi
+preset=${1:?Usage: scripts/build <preset> [build options]}
+shift
+cmake --preset "$preset"
+exec cmake --build --preset "$preset" "$@"

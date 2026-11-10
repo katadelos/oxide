@@ -1,0 +1,50 @@
+#!/bin/sh
+set -eu
+cd "$(dirname "$0")"
+[ "$(id -u)" = 0 ] || { echo 'Run as root.' >&2; exit 1; }
+grep -q '^Kindle 4\.1\.4 ' /etc/prettyversion.txt || { echo 'Requires Kindle 4.1.4.' >&2; exit 1; }
+[ ! -e /var/local/appreg.db ] || { echo 'This installer is for K4, not AppReg firmware.' >&2; exit 1; }
+base=/opt/amazon/ebook
+native=/var/local/oxide
+action=${1:-install}
+case $action in
+install)
+    [ -s oxide.jar ] && [ -s oxide-booklet.jar ] && [ -s oxide ]
+    ;;
+uninstall) ;;
+*) echo 'Usage: sh install.sh [install|uninstall]' >&2; exit 1 ;;
+esac
+root_ro=$(awk '$2 == "/" && $1 != "rootfs" {print $4}' /proc/mounts | grep -c '^ro[, ]' || true)
+restart=no
+cleanup() {
+    status=$?
+    trap - EXIT
+    set +e
+    rm -f "$base/lib/oxide.jar.new" "$base/booklet/oxide.jar.new" "$native/oxide.new"
+    sync
+    if [ "$root_ro" != 0 ]; then mount -o remount,ro / || status=1; fi
+    if [ "$restart" = yes ]; then /etc/init.d/framework start || status=1; fi
+    exit "$status"
+}
+mount -o remount,rw /
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+if [ "$action" = install ]; then
+    mkdir -p "$native"
+    cp oxide.jar "$base/lib/oxide.jar.new"
+    cp oxide-booklet.jar "$base/booklet/oxide.jar.new"
+    cp oxide "$native/oxide.new"
+    chmod 644 "$base/lib/oxide.jar.new" "$base/booklet/oxide.jar.new"
+    chown root:root "$native/oxide.new"
+    chmod 755 "$native/oxide.new"
+fi
+restart=yes
+/etc/init.d/framework stop
+if [ "$action" = install ]; then
+    mv "$native/oxide.new" "$native/oxide"
+    mv "$base/lib/oxide.jar.new" "$base/lib/oxide.jar"
+    mv "$base/booklet/oxide.jar.new" "$base/booklet/oxide.jar"
+else
+    rm -f "$base/lib/oxide.jar" "$base/booklet/oxide.jar" "$native/oxide"
+fi

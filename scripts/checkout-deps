@@ -1,0 +1,6 @@
+#!/bin/sh
+set -eu
+root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+git -C "$root" submodule update --init third_party/cjson third_party/openlipc third_party/fbink
+git -C "$root/third_party/fbink" config submodule.font8x8.url git@github.com:NiLuJe/font8x8.git
+git -C "$root/third_party/fbink" submodule update --init font8x8
