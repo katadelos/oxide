@@ -164,6 +164,7 @@ LIPCcode appEvent(LIPC* /*unused*/, const char* property, void* value, void* con
 
 int launcher() {
     requireRoot();
+    ensureDirectory(runDir, sharedDirectoryMode);
     FileLock singleton(std::string(runDir) + "/launcher.lock");
     if (!singleton.acquired()) {
         throw std::runtime_error("Launcher is already running");
